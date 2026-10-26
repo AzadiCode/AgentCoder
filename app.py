@@ -28,6 +28,8 @@ from pymongo import MongoClient
 from bson import ObjectId
 from bson.errors import InvalidId
 from werkzeug.exceptions import HTTPException
+from quality import run_quality_gate
+from orchestration import parse_plan, render_plan
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -79,7 +81,7 @@ else:
     db = mongomock.MongoClient().get_database("codewise")
     log.warning("MONGO_URI تنظیم نشده؛ داده‌ها موقتی‌ان و با ری‌استارت پاک می‌شن")
 for col, key, kw in ((db.projects, "owner", {}), (db.files, [("pid", 1), ("path", 1)], {"unique": True}), (db.snaps, [("pid", 1), ("t", -1)], {}),
-                     (db.chats, [("pid", 1), ("t", 1)], {})):
+                     (db.chats, [("pid", 1), ("t", 1)], {}), (db.tasks, [("pid", 1), ("created", -1)], {})):
     try:
         col.create_index(key, **kw)
     except Exception as e:
@@ -863,19 +865,51 @@ def snap(pid, label):
 
 def agent(pid, text, mode, job=None):
     """مولد رویدادها: delta | turn | file | tool | result | final | error"""
+    task_id = (job or {}).get("task_id")
+    if task_id:
+        db.tasks.update_one({"_id": task_id}, {"$set": {"status": "running", "started": now(), "updated": now(), "current_step": 0}}, upsert=True)
     sid = snap(pid, text)
     rules = ((db.projects.find_one({"_id": ObjectId(pid)}) or {}).get("rules") or "").strip()
     rules_txt = f"\n\nPROJECT RULES (set by the user, always follow):\n{rules[:3000]}" if rules else ""
     db.chats.insert_one({"pid": pid, "role": "user", "content": text, "t": now()})
     tree, body = project_context(pid, None, text)
     hist = [{"role": h["role"], "content": h["content"][:4000]} for h in db.chats.find({"pid": pid}).sort("t", -1).limit(17)][::-1][:-1]
-    msgs = [{"role": "system", "content": SYSTEM + "\n\n" + MODES.get(mode, MODES["write"]) + rules_txt + f"\n\nPROJECT FILES:\n{tree}\n\nFILE CONTENTS (may be partial; use <read> for others):\n{body}"}]
+    system_content = SYSTEM + "\n\n" + MODES.get(mode, MODES["write"]) + rules_txt + f"\n\nPROJECT FILES:\n{tree}\n\nFILE CONTENTS (may be partial; use <read> for others):\n{body}"
+    msgs = [{"role": "system", "content": system_content}]
     msgs += hist + [{"role": "user", "content": text}]
+    stop = lambda: bool(job and job["stop"])
+    plan = None
+    # A separate, bounded planning call prevents large implementation requests from
+    # entering the edit loop without explicit milestones and testable acceptance criteria.
+    if task_id and mode in ("write", "debug", "optimize") and os.environ.get("TASK_PLANNING", "1") != "0":
+        try:
+            planner_messages = [
+                {"role": "system", "content": (
+                    "You are a senior engineering planner. Do not write code and do not call tools. "
+                    "Return ONLY valid JSON with keys objective (string), tasks (array of 3-8 objects with title and detail), "
+                    "acceptance_criteria (array of testable strings), risks (array of strings). "
+                    "Break down the user's actual request based on the supplied project tree. Prioritize correctness, compatibility, "
+                    "security and verifiable outcomes. Never invent files or claim checks have run. Keep each task concise."
+                )},
+                {"role": "user", "content": f"MODE: {mode}\nGOAL: {text}\nPROJECT TREE:\n{tree[:10000]}"},
+            ]
+            raw_plan = "".join(stream_text(planner_messages, stop=stop, temperature=0.1, max_tokens=1800))
+            plan = parse_plan(raw_plan, text)
+        except Exception as plan_error:
+            log.warning("task planner unavailable; using fallback plan: %s", plan_error)
+            plan = parse_plan("", text)
+        db.tasks.update_one({"_id": task_id}, {"$set": {
+            "plan": plan, "acceptance_criteria": plan.get("acceptance_criteria", []),
+            "subtasks": plan.get("tasks", []), "phase": "implementing", "updated": now()
+        }})
+        msgs[0]["content"] += "\n\n" + render_plan(plan)
     changed, shown = set(), []
     used, nudges = False, 0
-    stop = lambda: bool(job and job["stop"])
+    quality_rounds, quality_summary = 0, ""
     try:
         for step in range(MAX_STEPS):
+            if task_id:
+                db.tasks.update_one({"_id": task_id}, {"$set": {"current_step": step + 1, "phase": "implementing", "updated": now()}})
             yield {"t": "turn", "n": step}
             prune(msgs)
             full = ""
@@ -899,6 +933,29 @@ def agent(pid, text, mode, job=None):
                 continue
             t = full.strip()
             if "<done/>" in full or not used or nudges >= 2:
+                # A real quality gate: run deterministic checks, then give the model a
+                # bounded chance to repair failures before declaring the task complete.
+                if used and changed and quality_rounds < 2:
+                    report = run_quality_gate(
+                        list(db.files.find({"pid": pid}, {"path": 1, "content": 1})),
+                        run_cmd, health, pid, changed,
+                    )
+                    quality_summary = "\n".join(
+                        f"- {'SKIP' if r.get('skipped') else ('PASS' if r['ok'] else 'FAIL')} {r['label']}"
+                        + (f": {r['output'][:1200]}" if not r['ok'] else "")
+                        for r in report["results"]
+                    )
+                    if task_id:
+                        db.tasks.update_one({"_id": task_id}, {"$set": {"quality": report, "updated": now()}})
+                    if report["failures"]:
+                        quality_rounds += 1
+                        failure_text = "\n\n".join(report["failures"][:8])[:9000]
+                        msgs += [
+                            {"role": "assistant", "content": full},
+                            {"role": "user", "content": "QUALITY GATE FAILED. Fix the actual causes, do not hide or weaken tests. Re-read relevant files, make minimal fixes, and let the next quality gate verify them.\n\n" + failure_text + "\n\nWhen fixed, continue normally and end with <done/>."},
+                        ]
+                        used = True
+                        continue
                 break
             if len(t) < 500 or t.endswith((":", "：", "…", "...")):    # وسط کار ایستاده؛ هلش می‌دیم
                 nudges += 1
@@ -909,10 +966,19 @@ def agent(pid, text, mode, job=None):
         else:
             shown.append("⚠️ به سقف مراحل رسیدم؛ بنویس «ادامه بده» تا ادامه بدم.")
         final = "\n\n".join(s for s in shown if s) or "(پاسخی تولید نشد)"
+        if quality_summary:
+            final += "\n\n### کنترل کیفیت خودکار\n" + quality_summary
         db.chats.insert_one({"pid": pid, "role": "assistant", "content": final[:20000], "t": now()})
+        if task_id:
+            status = "stopped" if stop() else ("needs_continuation" if "سقف مراحل رسیدم" in final else "completed")
+            db.tasks.update_one({"_id": task_id}, {"$set": {"status": status, "phase": "finished" if status == "completed" else status,
+                "updated": now(), "finished": now(), "changed": sorted(changed), "summary": final[:12000], "quality_summary": quality_summary,
+                "files_count": len(file_list(pid))}})
         yield {"t": "final", "text": final, "changed": sorted(changed), "files": file_list(pid), "snap": sid}
     except Exception as e:
         log.exception("agent error")
+        if task_id:
+            db.tasks.update_one({"_id": task_id}, {"$set": {"status": "failed", "updated": now(), "error": str(e)[:1000]}})
         yield {"t": "error", "x": str(e)[:300]}
 
 
@@ -1169,7 +1235,10 @@ def api_chat(uid, pid):
         for k in [k for k, v in JOBS.items() if v["done"] and time.time() - v["t"] > 3600]:
             JOBS.pop(k, None)
         jid = uuid.uuid4().hex
-        j = {"uid": uid, "pid": pid, "ev": [], "done": False, "stop": False, "t": time.time()}
+        j = {"uid": uid, "pid": pid, "task_id": jid, "ev": [], "done": False, "stop": False, "t": time.time()}
+        db.tasks.insert_one({"_id": jid, "uid": uid, "pid": pid, "goal": text, "mode": mode,
+                             "status": "queued", "created": now(), "updated": now(), "current_step": 0,
+                             "changed": [], "summary": ""})
         JOBS[jid], ACTIVE[pid] = j, jid
 
     def run():
@@ -1178,11 +1247,46 @@ def api_chat(uid, pid):
                 j["ev"].append(ev)
         except Exception as e:
             log.exception("job error")
+            db.tasks.update_one({"_id": jid}, {"$set": {"status": "failed", "updated": now(), "error": str(e)[:1000]}})
             j["ev"].append({"t": "error", "x": str(e)[:300]})
         finally:
             j["done"], j["t"] = True, time.time()
     threading.Thread(target=run, daemon=True, name="job").start()
     return jsonify(job=jid)
+
+
+@app.get("/api/projects/<pid>/tasks")
+@authed
+def api_tasks(uid, pid):
+    """Durable task history for a project; task records survive process restarts when MongoDB is configured."""
+    if not proj(pid, uid):
+        return jsonify(error="not found"), 404
+    rows = list(db.tasks.find({"pid": pid, "uid": uid}).sort("created", -1).limit(30))
+    out = []
+    for row in rows:
+        out.append({"id": row["_id"], "goal": row.get("goal", ""), "mode": row.get("mode", "write"),
+                    "status": row.get("status", "unknown"), "created": iso(row["created"]) if row.get("created") else None,
+                    "updated": iso(row["updated"]) if row.get("updated") else None,
+                    "current_step": row.get("current_step", 0), "phase": row.get("phase", "queued"),
+                    "plan": row.get("plan", {}), "changed": row.get("changed", []),
+                    "files_count": row.get("files_count", 0)})
+    return jsonify(tasks=out)
+
+
+@app.get("/api/tasks/<tid>")
+@authed
+def api_task(uid, tid):
+    row = db.tasks.find_one({"_id": tid, "uid": uid})
+    if not row or not proj(row.get("pid", ""), uid):
+        return jsonify(error="task not found"), 404
+    return jsonify(task={"id": row["_id"], "goal": row.get("goal", ""), "mode": row.get("mode", "write"),
+                         "status": row.get("status", "unknown"), "created": iso(row["created"]) if row.get("created") else None,
+                         "updated": iso(row["updated"]) if row.get("updated") else None,
+                         "current_step": row.get("current_step", 0), "phase": row.get("phase", "queued"),
+                         "plan": row.get("plan", {}), "subtasks": row.get("subtasks", []),
+                         "acceptance_criteria": row.get("acceptance_criteria", []),
+                         "changed": row.get("changed", []), "summary": row.get("summary", ""), "quality_summary": row.get("quality_summary", ""),
+                         "quality": row.get("quality", {}), "error": row.get("error")})
 
 
 @app.get("/api/jobs/<jid>")
