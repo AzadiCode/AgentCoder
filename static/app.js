@@ -281,9 +281,9 @@ async function loadSt() {
 async function undo(id) {
   if (S.busy) return toast("اول کار جاری رو متوقف کن");
   if (!await yes("فایل‌ها به قبل از اون اجرا برمی‌گردن (نسخه‌ی فعلی هم پشتیبان می‌شه). ادامه بدم؟")) return;
-  try { const r = await api(`/api/projects/${S.P}/restore`, "POST", { id }); S.files = r.files; S.last = null; drawFiles(); drawChat(); sheet("ovSet", false); toast("برگشت ✓"); if (S.tab === "pv") loadPv(); } catch (e) { toast(e.message); }
+  try { const r = await api(`/api/projects/${S.P}/restore`, "POST", { id }); S.files = r.files; S.last = null; drawFiles(); drawChat(); sheet("ovSet", false); toast("برگشت "); if (S.tab === "pv") loadPv(); } catch (e) { toast(e.message); }
 }
-$("rsave").onclick = async () => { try { await api(`/api/projects/${S.P}/rules`, "PUT", { rules: $("rules").value }); toast("ذخیره شد ✓"); } catch (e) { toast(e.message); } };
+$("rsave").onclick = async () => { try { await api(`/api/projects/${S.P}/rules`, "PUT", { rules: $("rules").value }); toast("ذخیره شد "); } catch (e) { toast(e.message); } };
 $("rname").onclick = async () => { const n = await ask("نام جدید", $("projName").textContent); if (!n) return; try { await api("/api/projects/" + S.P, "PATCH", { name: n }); $("projName").textContent = n; S.projects.find(x => x.id === S.P).name = n; } catch (e) { toast(e.message); } };
 $("theme").onclick = () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
 $("tsend").onclick = async () => { try { await api(`/api/projects/${S.P}/sendzip`, "POST"); toast("zip به تلگرام ارسال شد"); } catch (e) { toast(e.message); } };
@@ -308,7 +308,7 @@ async function openFile(p, isNew) {
   try { $("edt").value = isNew ? "" : (await api(`/api/projects/${S.P}/file?path=` + encodeURIComponent(p))).content; } catch (e) { return toast(e.message); }
   $("ed").classList.add("on");
 }
-async function saveFile() { try { await api(`/api/projects/${S.P}/file?path=` + encodeURIComponent(S.file), "PUT", { content: $("edt").value }); S.files = (await api("/api/projects/" + S.P)).files; drawFiles(); toast("ذخیره شد ✓"); return true; } catch (e) { toast(e.message); } }
+async function saveFile() { try { await api(`/api/projects/${S.P}/file?path=` + encodeURIComponent(S.file), "PUT", { content: $("edt").value }); S.files = (await api("/api/projects/" + S.P)).files; drawFiles(); toast("ذخیره شد "); return true; } catch (e) { toast(e.message); } }
 $("eds").onclick = saveFile;
 $("edx").onclick = () => $("ed").classList.remove("on");
 $("edd").onclick = async () => { if (!await yes("این فایل حذف بشه؟")) return; await api(`/api/projects/${S.P}/file?path=` + encodeURIComponent(S.file), "DELETE"); S.files = S.files.filter(f => f.path !== S.file); drawFiles(); $("ed").classList.remove("on"); };

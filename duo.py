@@ -37,7 +37,7 @@ MAX_DUOS, MAX_AGENTS = 40, 6
 # ───────────────────────── کتابخانه‌ی متخصص‌ها ─────────────────────────
 SKILLS = {
     "strategist": {
-        "fa": "ایده‌پرداز و استراتژیست", "en": "Ideation & Scenario Strategist", "icon": "💡", "name": "ایمان", "order": 10, "build_order": 0,
+        "fa": "ایده‌پرداز و استراتژیست", "en": "Ideation & Scenario Strategist", "icon": "", "name": "ایمان", "order": 10, "build_order": 0,
         "discuss": True, "builds": False, "reviews": False, "temp": 0.9,
         "short": "ایده‌های بکر، ۳ سناریوی امتیازدهی‌شده، انتخاب بهترین و برش MVP",
         "persona": "Ideation & scenario strategist. You think in user jobs-to-be-done, differentiation and sequencing. You never offer a single idea: you lay out the option space, score it honestly and commit to a recommendation. Creative yet buildable — every idea must be shippable by a small team.",
@@ -47,7 +47,7 @@ SKILLS = {
         "discuss2": "Refine your recommendation using the team's critique: adjust the scores if warranted, tighten the MVP cut, and write acceptance criteria for the 3 most important user flows. Do not restart from scratch.",
     },
     "skeptic": {
-        "fa": "منتقد و تحلیل‌گر ریسک", "en": "Pre-mortem Skeptic", "icon": "🧐", "name": "رها", "order": 30, "build_order": 0,
+        "fa": "منتقد و تحلیل‌گر ریسک", "en": "Pre-mortem Skeptic", "icon": "", "name": "رها", "order": 30, "build_order": 0,
         "discuss": True, "builds": False, "reviews": False, "temp": 0.6,
         "short": "پیش‌مرگ‌کاوی: ریسک‌های واقعی را رتبه‌بندی می‌کند و برای هرکدام راه‌حل می‌دهد",
         "persona": "Pre-mortem skeptic and risk analyst. You find the flaw that would actually sink the project, rank it, and always attach a concrete fix. Evidence over opinion; you endorse what is strong.",
@@ -56,7 +56,7 @@ SKILLS = {
         "discuss2": "Re-test the revised plan: which risks are now closed, which remain, and what is the single biggest threat left? Use <agree/> only if none is material.",
     },
     "designer": {
-        "fa": "طراح UI/UX و گرافیک", "en": "UI/UX & Graphic Designer", "icon": "🎨", "name": "نگار", "order": 20, "build_order": 20,
+        "fa": "طراح UI/UX و گرافیک", "en": "UI/UX & Graphic Designer", "icon": "", "name": "نگار", "order": 20, "build_order": 20,
         "discuss": True, "builds": True, "reviews": False, "temp": 0.7,
         "short": "هویت بصری، توکن‌های طراحی، DESIGN.md و پیاده‌سازی لایه‌ی بصری (CSS/SVG)",
         "persona": "Senior UI/UX and graphic designer for Persian/RTL, mobile-first products (Telegram mini-apps included). You design systems, not decoration: tokens, hierarchy, states, accessibility and purposeful motion. You give exact values (hex, px, ms), never vague adjectives.",
@@ -72,7 +72,7 @@ SKILLS = {
         "fix": "Fix EVERY visual / UX / accessibility issue raised for your files, re-check against the markup, and summarize by issue number.",
     },
     "architect": {
-        "fa": "معمار نرم‌افزار و سرپرست تیم", "en": "Software Architect & Team Lead", "icon": "🏛", "name": "آرتا", "order": 40, "build_order": 0,
+        "fa": "معمار نرم‌افزار و سرپرست تیم", "en": "Software Architect & Team Lead", "icon": "", "name": "آرتا", "order": 40, "build_order": 0,
         "discuss": True, "builds": False, "reviews": False, "temp": 0.4,
         "short": "معماری، قرارداد API و مدل داده، تصمیم‌گیری نهایی و نوشتن SPEC.md",
         "persona": "Pragmatic principal architect and the team lead. You make clean, minimal, testable designs with explicit trade-offs and you are decisive. You own the final spec and resolve disagreements with a clear rationale.",
@@ -83,7 +83,7 @@ SKILLS = {
                   "Task breakdown in build order (assign each task to a role); Acceptance criteria (testable, per flow); Risks & mitigations. Then reply with a 3-line summary. Tag: [PLAN]."),
     },
     "developer": {
-        "fa": "برنامه‌نویس ارشد", "en": "Lead Developer", "icon": "💻", "name": "دانا", "order": 50, "build_order": 10,
+        "fa": "برنامه‌نویس ارشد", "en": "Lead Developer", "icon": "", "name": "دانا", "order": 50, "build_order": 10,
         "discuss": True, "builds": True, "reviews": False, "temp": 0.2,
         "short": "ساخت کامل و کارکرد درست، اجرای تست، رفع ایراد بدون خراب‌کردن فایل‌ها",
         "persona": "Lead developer. You write complete, working, readable code with proper error handling and input validation and no placeholders. You honor the spec and teammates' contracts (ids, class names, routes). You verify by running.",
@@ -94,7 +94,7 @@ SKILLS = {
         "fix": "Fix EVERY issue raised for your files, re-run to verify, and summarize the fixes by issue number.",
     },
     "qa": {
-        "fa": "تستر، امنیت و پرفورمنس", "en": "QA, Security & Performance Engineer", "icon": "🛡", "name": "مهسا", "order": 60, "build_order": 0,
+        "fa": "تستر، امنیت و پرفورمنس", "en": "QA, Security & Performance Engineer", "icon": "", "name": "مهسا", "order": 60, "build_order": 0,
         "discuss": False, "builds": False, "reviews": True, "temp": 0.2,
         "short": "بازبینی روی فایل‌های واقعی: اجرا، باگ، امنیت، هماهنگی HTML/JS/CSS و تأیید نهایی",
         "persona": "QA & security engineer with a performance eye. You verify by reading and running, never by assumption. You report precise, reproducible issues with severity and a concrete fix.",
@@ -105,7 +105,7 @@ SKILLS = {
                    "Output a verdict, then numbered issues as `[P0|P1|P2] file:line — problem — fix` (max 12, no nitpicks, name the owner role when clear). If there are no P0/P1 issues, say so and add <approve/>. Tag: [REVIEW]."),
     },
     "custom": {
-        "fa": "متخصص دلخواه", "en": "Custom Specialist", "icon": "✨", "name": "متخصص", "order": 70, "build_order": 30,
+        "fa": "متخصص دلخواه", "en": "Custom Specialist", "icon": "", "name": "متخصص", "order": 70, "build_order": 30,
         "discuss": True, "builds": False, "reviews": False, "temp": 0.6,
         "short": "تخصص و رفتار دلخواه خودت؛ تعیین کن بحث کند، بسازد یا بازبینی کند",
         "persona": "Domain specialist defined by the director's instructions below.",
@@ -118,12 +118,12 @@ SKILLS = {
 }
 
 TEAMS = {
-    "full": {"label": "تیم کامل محصول", "hint": "ایده ← طراحی ← معماری ← ساخت ← تست؛ خروجی حرفه‌ای و کامل", "mode": "build",
+    "full": {"label": "تیم کامل محصول", "hint": "ایده، طراحی، معماری، ساخت و تست؛ خروجی حرفه‌ای و کامل", "mode": "build",
              "skills": ["strategist", "designer", "architect", "developer", "qa"]},
     "build": {"label": "ساخت سریع", "hint": "معمار + برنامه‌نویس + تستر؛ کوتاه و کاربردی", "mode": "build", "skills": ["architect", "developer", "qa"]},
     "frontend": {"label": "طراحی و فرانت‌اند", "hint": "برای صفحه/وب‌اپ با ظاهر درجه‌یک", "mode": "build", "skills": ["designer", "developer", "qa"]},
     "ideas": {"label": "ایده و برنامه‌ریزی", "hint": "فقط بحث و SPEC.md؛ سناریوها، نقد ریسک و معماری", "mode": "plan", "skills": ["strategist", "skeptic", "architect"]},
-    "duo": {"label": "دونفره: معمار ⟷ منتقد", "hint": "سبک و سریع، مناسب بررسی یک تصمیم", "mode": "plan", "skills": ["architect", "skeptic"]},
+    "duo": {"label": "دونفره: معمار و منتقد", "hint": "سبک و سریع، مناسب بررسی یک تصمیم", "mode": "plan", "skills": ["architect", "skeptic"]},
 }
 
 _KINDS = "IDEA|SCENARIOS|DESIGN|QUESTION|ANSWER|CRITIQUE|PLAN|DECISION|REVIEW|BUILD|DELIVER|SUMMARY"
@@ -132,7 +132,13 @@ KIND_LINE = re.compile(r"^[ \t]*\[(?:" + _KINDS + r")\][ \t]*", re.I | re.M)
 
 DUO_SYS = """You are {name} — {title} — on a small team of AI specialists building ONE project for a human director.
 TEAM: {roster}
-The human director may interject with [DIRECTOR] messages — top priority; follow them. Reply in the director's language (Persian by default); keep code, file names and identifiers in English.
+The human director may interject with [DIRECTOR] messages — top priority; follow them.
+
+LANGUAGE AND STYLE (strict)
+- Write every sentence of prose in fluent, natural, modern Persian, the way an educated Iranian engineer writes to a colleague. Never write English prose (if the director writes in another language, use that language instead).
+- Do not translate word for word from English; rephrase so it reads naturally. Short sentences, concrete wording, no bureaucratic phrasing.
+- Keep code, file paths, identifiers, library names and the [TAG] in English (use `backticks` for inline code and names).
+- No emojis, no decorative symbols, no greetings, no filler. Use short paragraphs or short lists; avoid headings unless you are writing a document file.
 
 YOUR SPECIALTY (stay inside it; the others cover the rest):
 {persona}{extra}
@@ -145,6 +151,7 @@ DECISION BOARD (agreed, binding):
 
 TEAM RULES
 - Begin your message with exactly ONE tag: [IDEA] [SCENARIOS] [DESIGN] [CRITIQUE] [PLAN] [DECISION] [QUESTION] [ANSWER] [REVIEW] [BUILD] [DELIVER].
+- Right after the tag put ONE line `<title>…</title>`: a Persian headline of at most 10 words saying what THIS message accomplishes or decides (for example: انتخاب معماری ماژولار با سه فایل اصلی). Not a topic label, not your name.
 - Deliver substance: concrete, specific, decision-ready. No filler, no flattery, no restating what was said. Build on teammates' latest points: adopt what is strong (credit them by name), challenge what is weak with a reason and a better alternative.
 - Record settled points as <decision>one sentence</decision> (max 3 per turn). Use <agree/> at the very end only when the plan is complete and you have nothing material left to challenge (never in round 1).
 - Quality gate: before sending, silently check your output against the specification of your task; close any gap.
@@ -333,7 +340,8 @@ def pub_msg(m):
     return {"id": str(m["_id"]), "seq": m["seq"], "agent": m["agent"], "kind": m.get("kind", ""), "text": m["text"], "to": m.get("to", ""),
             "round": m.get("round", 0), "phase": m.get("phase", ""), "files": m.get("files", []), "trace": m.get("trace", []),
             "decs": m.get("decs", []), "dur": m.get("dur", 0), "chars": m.get("chars", 0), "agree": m.get("agree", False),
-            "approve": m.get("approve", False), "t": C.iso(m["t"])}
+            "approve": m.get("approve", False), "title": m.get("title", ""), "think": m.get("think", ""),
+            "detail": m.get("detail", ""), "t": C.iso(m["t"])}
 
 
 def next_seq(did):
@@ -484,6 +492,81 @@ def chat_msgs(d, me, system, prompt, budget=26000):
     return msgs
 
 
+
+# ───────────────────────── کمک‌ها: خطا، عنوان، زبان ─────────────────────────
+TURN_SUFFIX = "\n\n(Reply in fluent Persian. Start with the [TAG], then one <title>…</title> line.)"
+DUO_AUTO_RETRIES = int(os.environ.get("DUO_AUTO_RETRIES", "2"))
+KIND_FA = {"idea": "ایده", "scenarios": "سناریوها", "design": "طراحی", "question": "سؤال", "answer": "پاسخ", "critique": "نقد", "plan": "طرح",
+           "decision": "تصمیم", "review": "بازبینی", "build": "ساخت", "deliver": "تحویل", "summary": "خلاصه", "reply": "پیام"}
+
+
+def fa_num(n):
+    return str(n).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+
+
+def fa_ratio(text):
+    """نسبت حروف فارسی به کل حروف (بدون کد و بک‌تیک)"""
+    t = re.sub(r"```.*?```|`[^`]*`|<[^>]+>", " ", text or "", flags=re.S)
+    letters = [c for c in t if c.isalpha()]
+    return (sum("\u0600" <= c <= "\u06ff" for c in letters) / len(letters)) if letters else 1.0
+
+
+def friendly_error(e):
+    """(عنوان فارسی، راهنمای کوتاه، جزئیات فنی، قابل‌تلاش‌دوباره؟)"""
+    raw = " ".join(str(e).split())
+    low = raw.lower()
+    detail = raw[:700]
+    if any(h in low for h in ("length of a", "too long", "context length", "token limit", "shorten your", "too many tokens")):
+        return ("درخواست برای مدل بیش از حد طولانی بود", "سیستم متن را کوتاه می‌کند؛ اگر تکرار شد مدلی با پنجره‌ی بزرگ‌تر اضافه کن.", detail, True)
+    if re.search(r"http 40[13]|unauthori[sz]ed|invalid api key|incorrect api key", low):
+        return ("کلید API یا دسترسی مدل معتبر نیست", "کلید و آدرس سرویس را در متغیرهای سرور بررسی کن.", detail, False)
+    if "http 429" in low or "rate limit" in low or "quota" in low:
+        return ("سقف تعداد درخواست مدل پر شده", "کمی صبر کن یا یک مدل جایگزین اضافه کن.", detail, True)
+    if re.search(r"http (5\d\d|408|409|425)", low) or "upstream" in low or "unavailable" in low or "overloaded" in low:
+        return ("سرویس مدل موقتاً در دسترس نیست", "مدل‌های رایگان ناپایدارند؛ یک مدل جایگزین اضافه کن تا خودکار جابه‌جا شود.", detail, True)
+    if any(h in low for h in ("streaming error", "timed out", "timeout", "connection", "empty", "خالی")):
+        return ("اتصال به مدل قطع شد یا پاسخی نیامد", "معمولاً با تلاش دوباره درست می‌شود.", detail, True)
+    return ("خطای غیرمنتظره", "جزئیات فنی را ببین یا دوباره ادامه بده.", detail, False)
+
+
+def make_title(kind, text, files):
+    """عنوان جایگزین وقتی مدل <title> ننوشته"""
+    if files:
+        return f"{fa_num(len(files))} فایل ساخته یا ویرایش شد"
+    plain = re.sub(r"[#*`>|_]|^\s*[-\d.]+\s", "", text or "", flags=re.M)
+    first = next((ln.strip() for ln in plain.splitlines() if len(ln.strip()) >= 8), "")
+    first = re.split(r"[.؟?!؛]", first)[0].strip()
+    return (first[:70] + ("…" if len(first) > 70 else "")) if first else KIND_FA.get(kind, "پیام")
+
+
+def rewrite_fa(text, stop, model=None):
+    """بازنویسی پیام انگلیسی/ضعیف به فارسی روان؛ اگر نشد None"""
+    sysm = ("You are a senior Persian technical editor. Rewrite the given team message in fluent, natural, modern Persian. "
+            "Keep EXACTLY: the leading [TAG], <title>, <decision> and <agree/> tags (translate only the text inside them), code, file paths, identifiers, numbers and the structure of tables and lists. "
+            "No emojis. No preface or commentary: output only the rewritten message.")
+    out = "".join(C.stream_text([{"role": "system", "content": sysm}, {"role": "user", "content": text}],
+                                stop=stop, model=model, temperature=0.2, max_tokens=2400, role="duo")).strip()
+    return out if out and len(out) >= 0.4 * len(text) and fa_ratio(out) > fa_ratio(text) else None
+
+
+def turn_with_retry(d, who, phase, ctl, blind=False):
+    """یک نوبت؛ خطاهای موقتی (سرویس مدل، قطع اتصال، پیام طولانی) خودکار با مکث دوباره امتحان می‌شن"""
+    did = str(d["_id"])
+    for n in range(DUO_AUTO_RETRIES + 1):
+        try:
+            return take_turn(d, who, phase, ctl, blind=blind)
+        except Exception as e:
+            title, _hint, detail, again = friendly_error(e)
+            if ctl["stop"] or not again or n >= DUO_AUTO_RETRIES:
+                raise
+            log.warning("duo turn failed (%s); retry %s", title, n + 1)
+            add_msg(did, "sys", "error", f"{title}. تلاش دوباره ({fa_num(n + 1)} از {fa_num(DUO_AUTO_RETRIES)})", detail=detail)
+            for _ in range(int(6 * (n + 1) / 0.25)):
+                if ctl["stop"]:
+                    break
+                time.sleep(0.25)
+
+
 # ───────────────────────── یک نوبت ─────────────────────────
 def take_turn(d, who, phase, ctl, blind=False):
     did, pid = str(d["_id"]), d["pid"]
@@ -503,7 +586,7 @@ def take_turn(d, who, phase, ctl, blind=False):
                 C.snap(pid, f"{ag['name']} · {phase}")
             except Exception:
                 log.exception("snap")
-    msgs = chat_msgs(d, who, sys_prompt(d, ag, phase, review, health), turn_prompt(d, ag, phase, review, blind))
+    msgs = chat_msgs(d, who, sys_prompt(d, ag, phase, review, health), turn_prompt(d, ag, phase, review, blind) + TURN_SUFFIX)
     rnd = d["round"] + 1
     emit(did, t="start", agent=who, phase=phase, round=rnd)
     with LK:
@@ -529,6 +612,11 @@ def take_turn(d, who, phase, ctl, blind=False):
                 emit(did, t="delta", agent=who, x=piece)
             if stop():
                 return None
+            if not tools_on and len(full) > 160 and fa_ratio(d["goal"]) > 0.3 and fa_ratio(full) < 0.35:
+                try:
+                    full = rewrite_fa(full, stop, model) or full      # مدل انگلیسی نوشته؛ یک بار به فارسی روان بازنویسی می‌شه
+                except Exception:
+                    log.exception("rewrite_fa")
             raws.append(full)
             if not tools_on:
                 shown.append(C.compact(full))
@@ -552,7 +640,10 @@ def take_turn(d, who, phase, ctl, blind=False):
         decs = [re.sub(r"\s+", " ", x).strip()[:300] for x in re.findall(r"<decision>(.*?)</decision>", clean, re.S)][:3]
         agree, approve = "<agree/>" in clean, "<approve/>" in clean
         text = "\n\n".join(s for s in shown if s)
-        text = re.sub(r"<decision>.*?</decision>|<agree/>|<approve/>|<done/>", "", text, flags=re.S).strip()
+        tm = re.search(r"<title>(.*?)</title>", raw, re.S)
+        title = re.sub(r"\s+", " ", tm.group(1)).strip()[:110] if tm else ""
+        think = "\n\n".join(x.strip() for x in re.findall(r"<think>(.*?)</think>", raw, re.S) if x.strip())[:4000]
+        text = re.sub(r"<decision>.*?</decision>|<title>.*?</title>|<agree/>|<approve/>|<done/>", "", text, flags=re.S).strip()
         tags = KIND_ANY.findall(text)
         kind = (tags[-1] if tools_on else tags[0]).lower() if tags else ("review" if readonly else "deliver" if phase == "polish" else "build" if phase == "build" else "plan" if phase == "finalize" else "reply")
         text = re.sub(r"\n{3,}", "\n\n", KIND_LINE.sub("", text)).strip()
@@ -561,6 +652,7 @@ def take_turn(d, who, phase, ctl, blind=False):
         if not text and not decs:
             raise RuntimeError("ایجنت پاسخ خالی داد (مدل/کلید API یا محدودیت توکن رو بررسی کن)")
         add_msg(did, who, kind, text, phase=phase, round=rnd, files=sorted(changed), trace=trace, decs=decs,
+                title=title or make_title(kind, text, sorted(changed)), think=think,
                 dur=round(time.time() - t0, 1), chars=len(raw), agree=agree, approve=approve)
         add_decisions(did, who, decs, rnd)
         return {"agree": agree, "approve": approve, "who": who}
@@ -575,7 +667,7 @@ def parallel_discuss(d, ids, ctl):
 
     def work(i):
         try:
-            out[i] = take_turn(d, i, "discuss", ctl, blind=True)
+            out[i] = turn_with_retry(d, i, "discuss", ctl, blind=True)
         except Exception as e:
             log.exception("parallel turn")
             errs.append(e)
@@ -608,7 +700,7 @@ def advance(d, results, phase, forced=False):
             qi, s["round"] = 0, d["round"] + 1
             both = all(flags.get(i) for i in q)
             if (both and s["round"] >= 2) or s["round"] >= d["max_rounds"]:
-                note = "✅ همه‌ی متخصص‌ها به توافق رسیدن؛ می‌ریم سراغ جمع‌بندی." if both else "⏱ به سقف راندها رسیدیم؛ جمع‌بندی رو شروع می‌کنیم."
+                note = "همه‌ی متخصص‌ها به توافق رسیدن؛ می‌ریم سراغ جمع‌بندی." if both else "به سقف راندها رسیدیم؛ جمع‌بندی رو شروع می‌کنیم."
                 s.update(phase="finalize", qi=0)
                 s["next"] = queue({**d, **s}, "finalize")[0]
                 return s, note
@@ -617,10 +709,10 @@ def advance(d, results, phase, forced=False):
         if qi >= len(q):
             if d["mode"] == "build":
                 s.update(phase="build", qi=0, cycle=0, appr={}, fq=[])
-                note = "📋 مستندات نهایی نوشته شد؛ مرحله‌ی ساخت و بازبینی شروع می‌شه."
+                note = "مستندات نهایی نوشته شد؛ مرحله‌ی ساخت و بازبینی شروع می‌شه."
             else:
                 s.update(phase="done", qi=0)
-                note = "🏁 برنامه‌ریزی تموم شد؛ SPEC.md (و در صورت وجود DESIGN.md) توی فایل‌های پروژه هست."
+                note = "برنامه‌ریزی تموم شد؛ SPEC.md (و در صورت وجود DESIGN.md) توی فایل‌های پروژه هست."
         else:
             s["qi"] = qi
     elif phase == "build":
@@ -633,21 +725,21 @@ def advance(d, results, phase, forced=False):
             rv = [a["id"] for a in reviewers(d)]
             if not rv or all(appr.get(i) for i in rv):
                 s.update(phase="polish", qi=0)
-                note = "✅ بازبین‌ها تأیید کردن؛ صیقل و تحویل نهایی شروع می‌شه." if rv else "🧹 صیقل و تحویل نهایی شروع می‌شه."
+                note = "بازبین‌ها تأیید کردن؛ صیقل و تحویل نهایی شروع می‌شه." if rv else "صیقل و تحویل نهایی شروع می‌شه."
             else:
                 cyc = d.get("cycle", 0) + 1
                 if cyc >= d["build_cycles"]:
                     s.update(phase="polish", qi=0, cycle=cyc)
-                    note = "⏱ به سقف دورهای بازبینی رسیدیم؛ صیقل نهایی ایرادهای باقی‌مانده رو می‌بنده."
+                    note = "به سقف دورهای بازبینی رسیدیم؛ صیقل نهایی ایرادهای باقی‌مانده رو می‌بنده."
                 else:
                     nd = {**d, "cycle": cyc}
                     s.update(cycle=cyc, qi=0, appr={}, fq=fix_queue(nd))
-                    note = f"🔁 دور {cyc + 1} از {d['build_cycles']}: رفع ایرادهای بازبینی."
+                    note = f"دور {cyc + 1} از {d['build_cycles']}: رفع ایرادهای بازبینی."
         else:
             s["qi"] = qi
     elif phase == "polish":
         s.update(phase="done", qi=0)
-        note = "🏁 تحویل نهایی انجام شد."
+        note = "تحویل نهایی انجام شد."
     nd = {**d, **s}
     q2 = queue(nd, nd["phase"])
     s["next"] = q2[min(nd.get("qi", 0), len(q2) - 1)] if q2 else ""
@@ -680,7 +772,7 @@ def run_loop(did):
             d = norm_duo(d)
             if ctl["stop"]:
                 upd(status="stopped")
-                add_msg(did, "sys", "system", "⏹ توقف داده شد. هر وقت خواستی «ادامه» رو بزن.")
+                add_msg(did, "sys", "system", "توقف داده شد. هر وقت خواستی «ادامه» رو بزن.")
                 return
             if d["phase"] == "done":
                 break
@@ -706,7 +798,7 @@ def run_loop(did):
                 s, note = advance(d, res, phase)
             else:
                 who = forced or q[min(d.get("qi", 0), len(q) - 1)]
-                r = take_turn(d, who, phase, ctl)
+                r = turn_with_retry(d, who, phase, ctl)
                 if r is None:
                     continue
                 s, note = advance(d, [r], phase, forced=bool(forced))
@@ -721,14 +813,15 @@ def run_loop(did):
                 ctl["pause"] = True
         upd(status="done", phase="done")
         last = db.duo_msgs.find_one({"did": did, "kind": "deliver"}, sort=[("seq", -1)])
-        notify(d, f"✅ تیم «{d['title']}» کارش رو تحویل داد. {len(d.get('decisions', []))} تصمیم ثبت شد.\n" + ((last or {}).get("text", "")[:900]))
+        notify(d, f"تیم «{d['title']}» کارش رو تحویل داد. {len(d.get('decisions', []))} تصمیم ثبت شد.\n" + ((last or {}).get("text", "")[:900]))
     except Exception as e:
         log.exception("duo loop")
         try:
-            add_msg(did, "sys", "system", "⚠️ خطا: " + str(e)[:300])
+            title, hint, detail, _again = friendly_error(e)
+            add_msg(did, "sys", "error", f"{title}. کار متوقف شد؛ {hint}", detail=detail)
             upd(status="error")
             if d:
-                notify(d, f"⚠️ تیم «{d['title']}» با خطا متوقف شد: {str(e)[:200]}")
+                notify(d, f"تیم «{d['title']}» متوقف شد: {title}")
         except Exception:
             pass
     finally:
@@ -937,7 +1030,7 @@ def register(app, db_, core):
     def transcript(d):
         did, ag = str(d["_id"]), A(d)
         L = [f"# {d['title']}", "", f"**Goal:** {d['goal']}", "", "## Decisions", ""]
-        L += [f"{i + 1}. {x['text']}" + (" 📌" if x.get("pinned") else "") for i, x in enumerate(d.get("decisions", []))] or ["(none)"]
+        L += [f"{i + 1}. {x['text']}" + (" (pinned)" if x.get("pinned") else "") for i, x in enumerate(d.get("decisions", []))] or ["(none)"]
         L += ["", "## Transcript", ""]
         for m in db.duo_msgs.find({"did": did}).sort("seq", 1):
             if m["agent"] == "sys":

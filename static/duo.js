@@ -147,14 +147,31 @@
   async function ctl(a) { try { await api("/api/duos/" + D.duo.id + "/ctl", "POST", { action: a }); haptic(); await pollOnce(); } catch (e) { toast(e.message); } }
 
   /* ───── پیام‌ها ───── */
+  const dur = x => (x || 0) < 60 ? fa(Math.round(x || 0)) + " ثانیه" : fa(Math.floor(x / 60)) + " دقیقه";
+  const plain = t => String(t || "").replace(/```[\s\S]*?```/g, " ").replace(/[#*`>|_]/g, "").replace(/\s+/g, " ").trim();
+  const traceHtml = tr => `<div class="wl">${tr.map(t => t.k === "file"
+    ? `<div class="rw"><div class="rh">${ic("file")}<span class="rp ltr mono">${esc(t.p)}</span><span class="k ${t.ok ? "ok" : "no"}">${ic(t.ok ? "check" : "x")}</span></div></div>`
+    : `<div class="rw o"><div class="rh">${ic("play")}<span class="rp ltr mono">${esc(t.p)}</span></div><div class="rd"><div>${esc(t.x || "")}</div></div></div>`).join("")}</div>`;
+
   function msgHtml(m) {
-    if (m.agent === "sys") return `<div class="sysn">${esc(m.text)}</div>`;
-    if (m.agent === "user") return `<div class="tb me"><div class="bx"><div class="bh"><b style="color:var(--wn)">تو (کارگردان)</b><span class="mu">${m.to === "all" || !m.to ? "← همه" : "← " + esc((ag(m.to) || {}).name || "")}</span></div><div class="a">${md(m.text)}</div></div></div>`;
-    const i = D.duo.agents.findIndex(a => a.id === m.agent), a = ag(m.agent) || { name: "؟", role: "عضو سابق", color: "#888", skill: "custom" };
-    const tr = (m.trace || []).length ? `<div class="grp"><button class="gh" data-g="1">${ic("list")}<span style="flex:1">${fa(m.trace.length)} اقدام</span>${ic("chev", "cv")}</button><div class="gb">${m.trace.map(t => t.k === "file" ? `<div class="rw"><div class="rh">${ic("file")}<span class="rp ltr mono">${esc(t.p)}</span><span class="k ${t.ok ? "ok" : "no"}">${ic(t.ok ? "check" : "x")}</span></div></div>` : `<div class="rw o"><div class="rh">${ic("play")}<span class="rp ltr mono">${esc(t.p)}</span></div><div class="rd"><div>${esc(t.x || "")}</div></div></div>`).join("")}</div></div>` : "";
-    return `<div class="tb" style="--c:${a.color}">${avatar(a, i)}<div class="bx"><div class="bh"><b>${esc(a.name)}</b><span class="mu">${esc(a.role)}</span><span class="kd">${KIND[m.kind] || esc(m.kind)}</span><span class="mu">R${fa(m.round)}</span></div>
-      <div class="a">${md(m.text)}</div>${(m.decs || []).map(x => `<div class="dec">${esc(x)}</div>`).join("")}${tr}
-      <div class="tft">${m.agree ? `<span class="chip ok">${ic("check")}موافق</span>` : ""}${m.approve ? `<span class="chip ok">${ic("check")}تأیید کار</span>` : ""}${(m.files || []).map(f => `<button class="chip ltr mono" data-open="${esc(f)}">${ic("file")}${esc(f)}</button>`).join("")}<span>${fa(m.dur)} ث · ~${tokens(m.chars)} توکن</span></div></div></div>`;
+    if (m.agent === "sys") {
+      if (m.kind === "error") return `<div class="errc"><div class="et">${ic("x")}<span>${esc(m.text)}</span></div>${m.detail ? `<button class="ex" type="button">جزئیات فنی</button><pre class="exd">${esc(m.detail)}</pre>` : ""}</div>`;
+      return `<div class="sysn">${esc(m.text)}</div>`;
+    }
+    if (m.agent === "user") return `<div class="tb me"><div class="bx"><div class="mh static"><span class="m1"><b style="color:var(--wn)">پیام کارگردان</b><span class="mu">به: ${m.to === "all" || !m.to ? "همه" : esc((ag(m.to) || {}).name || "")}</span></span></div><div class="mdt show"><div class="a">${md(m.text)}</div></div></div></div>`;
+    const i = D.duo.agents.findIndex(a => a.id === m.agent), a = ag(m.agent) || { name: "عضو سابق", role: "", color: "#888", skill: "custom" };
+    const tr = m.trace || [], files = m.files || [], decs = m.decs || [];
+    const meta = [dur(m.dur), "حدود " + tokens(m.chars) + " توکن", files.length ? fa(files.length) + " فایل" : "", decs.length ? fa(decs.length) + " تصمیم" : ""].filter(Boolean).join(" · ");
+    const flag = m.agree ? "موافق" : m.approve ? "تأیید کار" : "";
+    const tabs = [["a", "پاسخ"], m.think ? ["t", "تفکر"] : null, tr.length ? ["w", "اقدام‌ها (" + fa(tr.length) + ")"] : null].filter(Boolean);
+    return `<div class="tb" style="--c:${a.color}">${avatar(a, i)}<div class="bx">
+      <button class="mh" data-t="1" type="button" aria-expanded="false"><span class="m1"><b>${esc(a.name)}</b><span class="mu">${esc(a.role)}</span><span class="kd">${KIND[m.kind] || esc(m.kind)}</span>${flag ? `<span class="fg">${flag}</span>` : ""}${ic("chev", "cv")}</span>
+        <span class="ttl">${esc(m.title || KIND[m.kind] || "")}</span><span class="pv">${esc(plain(m.text).slice(0, 260))}</span><span class="mm">${meta}</span></button>
+      <div class="mdt">${tabs.length > 1 ? `<div class="mtabs">${tabs.map((t, k) => `<button type="button" data-pn="${t[0]}" class="${k ? "" : "on"}">${t[1]}</button>`).join("")}</div>` : ""}
+        <div class="pn on" data-p="a"><div class="a">${md(m.text)}</div>${decs.map(x => `<div class="dec">${esc(x)}</div>`).join("")}</div>
+        ${m.think ? `<div class="pn t" data-p="t"><div class="a">${md(m.think)}</div></div>` : ""}
+        ${tr.length ? `<div class="pn" data-p="w">${traceHtml(tr)}</div>` : ""}
+        ${files.length ? `<div class="tft">${files.map(f => `<button class="chip ltr mono" data-open="${esc(f)}">${ic("file")}${esc(f)}</button>`).join("")}</div>` : ""}</div></div></div>`;
   }
   function addMsg(m, quiet) {
     if (D.ids.has(m.id)) return;
@@ -164,6 +181,16 @@
     t.insertBefore(w.firstElementChild, t.querySelector(".tb.live") || null);
     if (!quiet) tlEnd();
   }
+  function liveInfo(t) {
+    const open = tag => (t.match(new RegExp("<" + tag + "[\\s>]", "g")) || []).length > (t.match(new RegExp("</" + tag + ">", "g")) || []).length;
+    let status = "در حال نوشتن پاسخ";
+    if (open("think")) status = "در حال فکر کردن";
+    else if (open("write") || open("edit") || open("replace") || open("insert")) { const m = [...t.matchAll(/<(?:write|edit|replace|insert)\s+path="([^"]+)"/g)].pop(); status = "در حال نوشتن فایل " + (m ? m[1] : ""); }
+    else if (/<run\s[^>]*$/.test(t.slice(-200)) || /<run\s/.test(t.slice(-120))) status = "در حال اجرای دستور";
+    const tm = t.match(/<title>([\s\S]*?)<\/title>/);
+    const clean = t.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, "").replace(/<(write|edit|replace|insert)\s[^>]*>[\s\S]*?(?:<\/\1>|$)/g, "").replace(/<title>[\s\S]*?(?:<\/title>|$)/g, "").replace(/<[^>]*>?/g, "").replace(/^\s*\[[A-Za-z]+\]\s*/, "").trim();
+    return { status, title: tm ? tm[1].trim() : "", tail: plain(clean).slice(-260) };
+  }
   function paintLive() {
     const t = $("tl"); if (!t) return;
     t.querySelectorAll(".tb.live").forEach(el => { if (!D.live[el.dataset.a]) el.remove(); });
@@ -172,13 +199,19 @@
       let el = t.querySelector(`.tb.live[data-a="${L.agent}"]`);
       if (!el) { el = document.createElement("div"); el.className = "tb live"; el.dataset.a = L.agent; t.appendChild(el); }
       el.style.setProperty("--c", a.color);
-      el.innerHTML = `${avatar(a, D.duo.agents.indexOf(a))}<div class="bx"><div class="bh"><b>${esc(a.name)}</b><span class="mu">${esc(a.role)}</span><span class="kd">${L.phase === "discuss" ? "در حال نوشتن" : L.phase === "build" ? "در حال کار" : L.phase === "polish" ? "صیقل نهایی" : "مستندسازی"}</span></div><div class="a">${md(L.text)}</div>${DOTS}</div>`;
+      const info = liveInfo(L.text), ph = L.phase === "discuss" ? "بحث" : L.phase === "build" ? "ساخت" : L.phase === "polish" ? "صیقل نهایی" : "مستندسازی";
+      el.innerHTML = `${avatar(a, D.duo.agents.indexOf(a))}<div class="bx"><div class="mh static"><span class="m1"><b>${esc(a.name)}</b><span class="mu">${esc(a.role)}</span><span class="kd">${ph}</span></span>
+        <span class="ttl">${esc(info.title || info.status)}</span>${info.title ? `<span class="mm">${info.status}</span>` : ""}</div>${info.tail ? `<div class="lv">${esc(info.tail)}</div>` : ""}${DOTS}</div>`;
     });
     tlEnd();
   }
   function tlEnd(force) { const t = $("tl"); if (t && (force || D.stick)) t.scrollTop = t.scrollHeight; }
   document.addEventListener("click", e => {
-    const t = e.target.closest("#tl [data-g]"); if (t) { t.parentElement.classList.toggle("o"); return; }
+    const h = e.target.closest("#tl [data-t]");
+    if (h) { const o = h.closest(".tb").classList.toggle("o"); h.setAttribute("aria-expanded", o); return; }
+    const tab = e.target.closest("#tl [data-pn]");
+    if (tab) { const tb = tab.closest(".tb"); tb.querySelectorAll("[data-pn]").forEach(x => x.classList.toggle("on", x === tab)); tb.querySelectorAll(".pn").forEach(x => x.classList.toggle("on", x.dataset.p === tab.dataset.pn)); return; }
+    const ex = e.target.closest("#tl .ex"); if (ex) { ex.parentElement.classList.toggle("o"); return; }
     const o = e.target.closest("#tl [data-open]"); if (o) openFile(o.dataset.open);
   });
 

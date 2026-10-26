@@ -33,7 +33,7 @@ from quality import run_quality_gate
 from orchestration import parse_plan, render_plan, can_transition, checkpoint
 from project_memory import build_memory, render_memory, merge_user_memory
 from review import build_diff, parse_review, render_findings, parse_progress_updates, apply_progress, PROGRESS_RE
-from provider_router import ProviderRouter, load_providers, chunk_text
+from provider_router import ProviderRouter, ProviderError, load_providers, chunk_text
 from task_runtime import claim_project_lease, renew_project_lease, release_project_lease, sanitize_event, DEFAULT_LEASE_SECONDS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -62,6 +62,8 @@ MAX_STEPS = _int("MAX_STEPS", 30)
 RUN_TIMEOUT = _int("RUN_TIMEOUT", 20)
 ALLOW_RUN = os.environ.get("ALLOW_RUN", "1") != "0"
 CTX_CHARS = _int("CTX_CHARS", 30000)            # سقف محتوای فایل‌هایی که خودکار به مدل داده می‌شه
+AI_MAX_PROMPT_CHARS = _int("AI_MAX_PROMPT_CHARS", 60000)   # سقف نرم کل پرامپت؛ بیشتر از این قبل از ارسال کوتاه می‌شه
+AI_TURN_RETRIES = _int("AI_TURN_RETRIES", 2)                # تلاش دوباره‌ی کل درخواست وقتی همه‌ی مدل‌ها موقتاً خطا دادن
 MAX_FILE, MAX_FILES, MAX_PROJECTS = 300_000, 200, 30
 WEBHOOK_SECRET = hashlib.sha256(("cw" + SECRET_KEY).encode()).hexdigest()[:32]
 
@@ -84,6 +86,7 @@ try:
         session=SESSION,
         cooldown=float(os.environ.get("AI_PROVIDER_COOLDOWN", "12")),
         max_attempts=int(os.environ.get("AI_MAX_PROVIDER_ATTEMPTS", "6")),
+        same_retries=int(os.environ.get("AI_SAME_MODEL_RETRIES", "2")),
     )
     # JSON-only deployments need no dummy legacy AI_* values. Keep these defaults for
     # the existing UI and legacy call sites; actual requests are routed by AI_ROUTER.
@@ -364,15 +367,57 @@ REPLY FORMAT: clean Markdown. Short paragraphs; bullet lists for steps/options; 
 Quality bar: correct, secure (validate input, no secrets in code), handle errors, simple over clever, polished UI (spacing, states, RTL, dark/light) when you build interfaces.""".replace("{TOOLS}", TOOLS_DOC).replace("{RULES}", FILE_RULES)
 
 
+def _prompt_chars(msgs):
+    return sum(len(m.get("content") or "") for m in msgs)
+
+
+def shrink_messages(msgs, level=1):
+    """پرامپت رو در جا کوتاه می‌کنه (سطح ۱ ملایم تا ۳ حداقلی). ابتدای system (قوانین و ابزارها) حفظ می‌شه."""
+    sys_cap, msg_cap, keep = {1: (24000, 5000, 10), 2: (12000, 2500, 5)}.get(level, (6000, 1200, 3))
+    if msgs and msgs[0]["role"] == "system" and len(msgs[0]["content"]) > sys_cap:
+        msgs[0]["content"] = msgs[0]["content"][:sys_cap] + "\n...(context trimmed to fit the provider limit)"
+    if len(msgs) - 1 > keep:
+        del msgs[1:len(msgs) - keep]
+    for i, m in enumerate(msgs[1:], 1):
+        cap = msg_cap * 2 if i == len(msgs) - 1 else msg_cap
+        c = m.get("content") or ""
+        if len(c) > cap:
+            m["content"] = c[:cap // 2] + "\n...(trimmed)...\n" + c[-cap // 2:]
+    if len(msgs) > 1 and msgs[1]["role"] != "user":
+        msgs.insert(1, {"role": "user", "content": "(earlier conversation condensed)"})
+    return msgs
+
+
 def llm_stream(messages, model=None, temperature=0.2, max_tokens=None, role=None):
     """Route each model call through healthy compatible providers and fail over on errors.
 
     The provider router buffers a single completion before yielding it. This intentionally
     avoids leaking partial tool tags or mixed answers when a stream fails mid-response.
+    Recovery: an over-long prompt is shrunk and retried; temporary failures are retried with a pause.
     """
+    level = 0
+    while level < 3 and _prompt_chars(messages) > AI_MAX_PROMPT_CHARS:
+        level += 1
+        shrink_messages(messages, level)
     payload = {"model": model or AI_MODEL, "messages": messages, "temperature": temperature,
                "max_tokens": max_tokens or AI_MAX_TOKENS, "stream": True}
-    content, info = AI_ROUTER.complete(payload, requested_model=model, role=role or ("duo" if model else "main"))
+    waits = 0
+    while True:
+        try:
+            content, info = AI_ROUTER.complete(payload, requested_model=model, role=role or ("duo" if model else "main"))
+            break
+        except ProviderError as exc:
+            if exc.context_too_long and level < 3:
+                level += 1
+                log.warning("AI prompt rejected as too long; shrinking to level %s", level)
+                shrink_messages(messages, level)
+                continue
+            if exc.retryable and waits < AI_TURN_RETRIES:
+                waits += 1
+                log.warning("AI call failed temporarily; retry %s/%s", waits, AI_TURN_RETRIES)
+                time.sleep(3 * waits)
+                continue
+            raise
     log.info("AI completion provider=%s model=%s latency_ms=%s attempts=%s role=%s",
              info.get("provider"), info.get("model"), info.get("latency_ms"), info.get("attempts"), role or "main")
     for piece in chunk_text(content, int(os.environ.get("AI_OUTPUT_CHUNK_CHARS", "256"))):
@@ -834,16 +879,16 @@ def compact(text):
     def chip(m):
         g = m.groupdict()
         if g["w"]:
-            return f"\n`📝 {g['w']}`\n"
+            return f"\n`نوشتن: {g['w']}`\n"
         if g["e"] or g["r"]:
-            return f"\n`✏️ {g['e'] or g['r']}`\n"
+            return f"\n`ویرایش: {g['e'] or g['r']}`\n"
         if g["i"]:
-            return f"\n`➕ {g['i']}`\n"
+            return f"\n`درج: {g['i']}`\n"
         if g["run"]:
-            return f"\n`▶ {g['run']}`\n"
+            return f"\n`اجرا: {g['run']}`\n"
         return ""
     t = TOOL_RE.sub(chip, t)
-    t = re.sub(r'<(?:write|edit|replace|insert)\s+path="([^"]+)"[^>]*>.*$', lambda m: f"\n`⚠️ {m.group(1)} (ناقص ماند)`\n", t, flags=re.S)
+    t = re.sub(r'<(?:write|edit|replace|insert)\s+path="([^"]+)"[^>]*>.*$', lambda m: f"\n`ناقص ماند: {m.group(1)}`\n", t, flags=re.S)
     return re.sub(r"\n{3,}", "\n\n", t).strip()
 
 
@@ -950,7 +995,7 @@ def agent(pid, text, mode, job=None):
                 full += piece
                 yield {"t": "delta", "x": piece}
             if stop():
-                shown += [compact(full), "⏹ متوقف شد"]
+                shown += [compact(full), "متوقف شد"]
                 break
             progress_updates = parse_progress_updates(full)
             if progress_updates and task_id:
@@ -1055,7 +1100,7 @@ def agent(pid, text, mode, job=None):
                 continue
             break
         else:
-            shown.append("⚠️ به سقف مراحل رسیدم؛ بنویس «ادامه بده» تا ادامه بدم.")
+            shown.append("به سقف مراحل رسیدم؛ بنویس «ادامه بده» تا ادامه بدم.")
         final = "\n\n".join(s for s in shown if s) or "(پاسخی تولید نشد)"
         if quality_summary:
             final += "\n\n### کنترل کیفیت خودکار\n" + quality_summary
@@ -1686,7 +1731,7 @@ def handle_msg(msg):
     if text.startswith("/new"):
         pid = new_project(uid, text[4:].strip() or "پروژه‌ی جدید")
         db.users.update_one({"_id": uid}, {"$set": {"active": pid}}, upsert=True)
-        return tg("sendMessage", chat_id=uid, text="پروژه‌ی جدید ساخته شد و فعاله ✅")
+        return tg("sendMessage", chat_id=uid, text="پروژه‌ی جدید ساخته شد و فعاله")
     if text.startswith("/zip"):
         return send_zip(uid, pid, (proj(pid, uid) or {}).get("name", "project"))
     if text.startswith("/clear"):
@@ -1695,24 +1740,24 @@ def handle_msg(msg):
     if not text or text.startswith("/") or not rate_ok(f"chat{uid}", 20, 60):
         return
     if busy(pid):
-        return tg("sendMessage", chat_id=uid, text="⏳ یه ایجنت (یا دوئل) هنوز روی این پروژه مشغوله؛ کمی بعد دوباره بفرست.")
-    st = (tg("sendMessage", chat_id=uid, text="⏳ شروع کردم…").get("result") or {}).get("message_id")
+        return tg("sendMessage", chat_id=uid, text="یه ایجنت (یا دوئل) هنوز روی این پروژه مشغوله؛ کمی بعد دوباره بفرست.")
+    st = (tg("sendMessage", chat_id=uid, text="شروع کردم…").get("result") or {}).get("message_id")
     steps, last = [], 0.0
     for ev in agent(pid, text, "write"):
         if ev["t"] == "file":
-            steps.append(("📝 " if ev.get("ok", True) else "⚠️ ") + ev["path"])
+            steps.append(("نوشته شد: " if ev.get("ok", True) else "ناموفق: ") + ev["path"])
         elif ev["t"] == "result":
             steps.append("▶ " + ev["name"][:60])
         if st and steps and time.time() - last > 3:
-            tg("editMessageText", chat_id=uid, message_id=st, text="⏳ در حال کار…\n" + "\n".join(steps[-8:]))
+            tg("editMessageText", chat_id=uid, message_id=st, text="در حال کار…\n" + "\n".join(steps[-8:]))
             tg("sendChatAction", chat_id=uid, action="typing")
             last = time.time()
         if ev["t"] == "final":
             if st:
                 tg("deleteMessage", chat_id=uid, message_id=st)
-            send_long(uid, ev["text"] + (("\n\n📁 فایل‌های تغییرکرده: " + "، ".join(ev["changed"])) if ev["changed"] else ""))
+            send_long(uid, ev["text"] + (("\n\nفایل‌های تغییرکرده: " + "، ".join(ev["changed"])) if ev["changed"] else ""))
         elif ev["t"] == "error":
-            tg("sendMessage", chat_id=uid, text="⚠️ خطا: " + ev["x"])
+            tg("sendMessage", chat_id=uid, text="خطا: " + ev["x"])
 
 
 @app.post("/mother")

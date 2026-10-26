@@ -155,12 +155,11 @@ main{flex:1;min-height:0;display:flex;position:relative}
 .steps span{flex:none;color:var(--mu);padding:0 8px;border-radius:999px;border:1px solid transparent}.steps .on{color:var(--tx);border-color:var(--ln);background:var(--rs);font-weight:700}.steps .dn{color:var(--ok)}
 .prog{height:2px;background:var(--ln);margin:4px 10px 0;border-radius:2px;overflow:hidden}.prog i{display:block;height:100%;background:var(--ac);transition:width .4s}
 .ar-meta{display:flex;justify-content:space-between;padding:2px 12px 4px;color:var(--mu);font-size:11.5px}
-#tl{flex:1;min-height:0;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:14px}
+#tl{flex:1;min-height:0;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:9px}
 .tb{display:flex;gap:9px;align-items:flex-start}
 .tb .bx{flex:1;min-width:0;overflow-wrap:anywhere}
 .tb .bh{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.3px}.tb .bh b{color:var(--c)}.tb .bh .mu{font-size:11.5px}
 .kd{padding:0 8px;border-radius:999px;background:var(--rs);font-size:11px;color:var(--mu)}
-.tb.me .bx{background:var(--rs);padding:6px 11px;border-radius:12px}
 .tb.live .bx{opacity:.95}
 .dec{margin:6px 0;padding:5px 10px;border-inline-start:3px solid var(--ok);background:color-mix(in srgb,var(--ok) 9%,transparent);border-radius:6px;font-size:13px}
 .tft{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;font-size:11.5px;color:var(--mu)}
@@ -193,3 +192,37 @@ main{flex:1;min-height:0;display:flex;position:relative}
 .task-event { padding: 7px 0; border-bottom: 1px solid var(--line, rgba(127,127,127,.18)); overflow-wrap: anywhere; }
 .task-event:last-child { border-bottom: 0; }
 .task-event small { display: block; opacity: .7; margin-bottom: 3px; }
+
+/* کارت پیام ایجنت‌ها (تب تیم): فشرده، با عنوان گویا و جزئیات بازشونده */
+.tb{gap:8px}
+.tb>.av{margin-top:3px}
+.tb .bx{border:1px solid var(--ln);border-inline-start:3px solid var(--c);border-radius:12px;background:var(--sf);overflow:hidden}
+.tb.me .bx{border-inline-start-color:var(--wn);background:var(--rs)}
+.mh{display:flex;flex-direction:column;gap:2px;width:100%;padding:7px 10px;text-align:start;align-items:stretch}
+.mh.static{cursor:default}
+.mh .m1{display:flex;align-items:center;gap:6px;font-size:12px;flex-wrap:wrap}
+.mh .m1 b{color:var(--c);font-size:12.5px}
+.mh .m1 .cv{margin-inline-start:auto;width:15px;height:15px;color:var(--mu);transition:transform .15s}
+.tb.o .mh .cv{transform:rotate(180deg)}
+.mh .ttl{font-weight:700;font-size:13.8px;line-height:1.7}
+.mh .pv{color:var(--mu);font-size:12.5px;line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tb.o .mh .pv{display:none}
+.mh .mm{color:var(--mu);font-size:11.3px}
+.fg{color:var(--ok);font-size:11px;border:1px solid color-mix(in srgb,var(--ok) 40%,var(--ln));border-radius:999px;padding:0 7px}
+.mdt{display:none;border-top:1px solid var(--ln);padding:8px 10px;flex-direction:column;gap:8px}
+.tb.o .mdt,.mdt.show{display:flex}
+.mdt.show{border-top:0;padding-top:0}
+.mtabs{display:flex;gap:4px;flex-wrap:wrap}
+.mtabs button{padding:1px 10px;border-radius:8px;font-size:12px;color:var(--mu);border:1px solid transparent}
+.mtabs button.on{background:var(--rs);color:var(--tx);border-color:var(--ln);font-weight:700}
+.pn{display:none}.pn.on{display:block}
+.pn.t .a{color:var(--mu);font-size:12.8px}
+.wl{border:1px solid var(--ln);border-radius:9px;overflow:hidden}
+.tb.live .lv{padding:0 10px 4px;color:var(--mu);font-size:12.3px;line-height:1.7;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tb.live .dots{padding:0 10px 7px}
+.errc{align-self:stretch;border:1px solid color-mix(in srgb,var(--bd) 45%,var(--ln));border-inline-start:3px solid var(--bd);border-radius:10px;background:color-mix(in srgb,var(--bd) 7%,var(--sf));padding:6px 10px;font-size:12.8px}
+.errc .et{display:flex;gap:7px;align-items:flex-start;line-height:1.8}
+.errc .et .ic{width:15px;height:15px;color:var(--bd);margin-top:5px;flex:none}
+.errc .ex{color:var(--mu);font-size:11.8px;text-decoration:underline;margin-top:2px}
+.errc .exd{display:none;margin:6px 0 0;padding:6px 8px;background:var(--code);border-radius:8px;font:11.5px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:140px;overflow:auto;direction:ltr;text-align:left}
+.errc.o .exd{display:block}
