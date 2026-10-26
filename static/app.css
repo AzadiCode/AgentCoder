@@ -184,3 +184,12 @@ main{flex:1;min-height:0;display:flex;position:relative}
   .ov{align-items:center}.sh{border-radius:16px}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+
+.provider-row{align-items:flex-start}.provider-row small{overflow-wrap:anywhere}.provider-row b{font-size:13px}
+.task-row { align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+.task-row > span { min-width: 0; flex: 1 1 180px; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.task-events { flex: 1 0 100%; min-width: 0; padding: 8px; border-radius: 10px; background: var(--panel, rgba(127,127,127,.08)); }
+.task-event { padding: 7px 0; border-bottom: 1px solid var(--line, rgba(127,127,127,.18)); overflow-wrap: anywhere; }
+.task-event:last-child { border-bottom: 0; }
+.task-event small { display: block; opacity: .7; margin-bottom: 3px; }

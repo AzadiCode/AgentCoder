@@ -99,3 +99,41 @@ def render_plan(plan: dict[str, Any]) -> str:
         lines.extend(f"- {item}" for item in plan["risks"])
     lines.append("Do not claim completion until the acceptance criteria and available verification checks have been addressed.")
     return "\n".join(lines)
+
+
+# Explicit lifecycle states used by the task orchestrator. Terminal states may only
+# return to running through the explicit resume endpoint.
+TASK_TRANSITIONS = {
+    "queued": {"running", "failed", "cancelled"},
+    "running": {"completed", "failed", "stopped", "needs_continuation", "verification_failed"},
+    "needs_continuation": {"running", "cancelled"},
+    "verification_failed": {"running", "cancelled"},
+    "stopped": {"running", "cancelled"},
+    "completed": {"running"},
+    "failed": {"running", "cancelled"},
+    "cancelled": set(),
+}
+
+
+def can_transition(current: str, target: str, *, resume: bool = False) -> bool:
+    """Return whether a task status change is valid; resume must be explicit.
+
+    This helper is deliberately pure so lifecycle behavior can be tested without
+    starting Flask, MongoDB, or an LLM request.
+    """
+    current = str(current or "queued")
+    target = str(target or "")
+    if target == "running" and current == "running":
+        return bool(resume)  # recover a stale running task after a process restart
+    if target == "running" and current != "queued" and not resume:
+        return False
+    return target in TASK_TRANSITIONS.get(current, set())
+
+
+def checkpoint(step: int, phase: str, changed: list[str] | tuple[str, ...] = ()) -> dict[str, Any]:
+    """Build a bounded, JSON-serializable execution checkpoint."""
+    allowed_phases = {"queued", "planning", "implementing", "verifying", "repairing", "finished", "completed", "failed", "stopped", "needs_continuation", "verification_failed", "cancelled"}
+    phase = phase if phase in allowed_phases else "implementing"
+    return {"current_step": max(0, min(int(step or 0), 10000)), "phase": phase,
+            "checkpoint": {"step": max(0, min(int(step or 0), 10000)), "phase": phase,
+                           "changed": sorted({str(x)[:120] for x in changed if x})[:200]}}

@@ -215,7 +215,63 @@ $("pnew").onclick = async () => {
   try { const r = await api("/api/projects", "POST", { name }); S.projects.unshift({ id: r.id, name }); await openProject(r.id); } catch (e) { toast(e.message); }
 };
 $("setBtn").onclick = () => { sheet("ovSet", true); loadSt(); };
+async function loadProviders() {
+  const box = $("providerStatus");
+  if (!box) return;
+  box.innerHTML = '<div class="mu">در حال دریافت وضعیت…</div>';
+  try {
+    const data = await api("/api/ai/providers");
+    const rows = data.providers || [];
+    box.innerHTML = rows.length ? rows.map(p => {
+      const cooling = Number(p.cooldown_seconds || 0) > 0;
+      const state = cooling ? `موقتاً کنار گذاشته شده · ${fa(p.cooldown_seconds)} ثانیه` : (Number(p.failures || 0) > 0 ? "در دسترس برای تلاش بعدی؛ خطای قبلی ثبت شده" : "آماده / هنوز خطایی ثبت نشده");
+      const roles = Object.entries(p.role_models || {}).map(([r, m]) => `${r}: ${m}`).join(" · ");
+      const err = p.last_error ? `<small>آخرین خطا: ${esc(p.last_error)}</small>` : "";
+      return `<div class="li provider-row"><span><b>${esc(p.name)}</b><small>${esc((p.models || []).join(", "))}</small><small>${esc(state)}</small><small>موفق: ${fa(p.successes || 0)} · ناموفق: ${fa(p.failures || 0)} · پاسخ: ${p.latency_ms == null ? "—" : fa(p.latency_ms) + " ms"}</small>${roles ? `<small>مدل‌های نقش: ${esc(roles)}</small>` : ""}${err}</span></div>`;
+    }).join("") : '<div class="mu">هیچ سرویس AI پیکربندی نشده است.</div>';
+  } catch (e) {
+    box.innerHTML = `<div class="mu">دریافت وضعیت ناموفق بود: ${esc(e.message)}</div>`;
+  }
+}
+$("providerRefresh")?.addEventListener("click", loadProviders);
+
+const TASK_RESUMABLE = new Set(["needs_continuation", "verification_failed", "stopped", "failed", "completed", "running"]);
+async function loadTasks() {
+  const box = $("taskHistory");
+  if (!box || !S.P) return;
+  box.innerHTML = '<div class="mu">در حال دریافت وظایف…</div>';
+  try {
+    const data = await api(`/api/projects/${S.P}/tasks`);
+    const rows = data.tasks || [];
+    box.innerHTML = rows.length ? rows.map(t => {
+      const label = `${t.status || "unknown"} · ${t.phase || "—"} · مرحله ${fa(t.current_step || 0)}`;
+      const resume = TASK_RESUMABLE.has(t.status) ? `<button class="btn" data-task-resume="${esc(t.id)}">ادامه</button>` : "";
+      return `<div class="li task-row"><span><b>${esc((t.goal || "وظیفه").slice(0, 180))}</b><small>${esc(label)}</small><small>${t.updated ? esc(new Date(t.updated).toLocaleString()) : ""} · ${fa(t.files_count || 0)} فایل</small></span><div class="row-actions"><button class="btn" data-task-events="${esc(t.id)}">رویدادها</button>${resume}</div><div class="task-events" id="events-${esc(t.id)}" hidden></div></div>`;
+    }).join("") : '<div class="mu">هنوز وظیفه‌ای ثبت نشده است.</div>';
+    box.querySelectorAll("[data-task-events]").forEach(b => b.onclick = async () => {
+      const id = b.dataset.taskEvents, panel = $("events-" + id);
+      if (!panel) return;
+      if (!panel.hidden) { panel.hidden = true; return; }
+      panel.hidden = false; panel.innerHTML = '<small>در حال بارگذاری رویدادها…</small>';
+      try {
+        const r = await api(`/api/tasks/${id}/events?limit=30`);
+        const evs = r.events || [];
+        panel.innerHTML = evs.length ? evs.map(e => `<div class="task-event"><small>#${fa(e.seq)} · ${esc(e.event.type || "event")}</small><div>${esc(e.event.path || e.event.tool || e.event.x || e.event.text || "رویداد ثبت شد")}</div></div>`).join("") : '<small>رویداد مهمی ثبت نشده است.</small>';
+      } catch (e) { panel.innerHTML = `<small>${esc(e.message)}</small>`; }
+    });
+    box.querySelectorAll("[data-task-resume]").forEach(b => b.onclick = async () => {
+      if (S.busy) return toast("اول کار جاری رو متوقف کن");
+      b.disabled = true;
+      try { const r = await api(`/api/tasks/${b.dataset.taskResume}/resume`, "POST", {}); sheet("ovSet", false); attach(r.job); setBusy(true); toast("ادامه‌ی وظیفه شروع شد"); }
+      catch (e) { toast(e.message); b.disabled = false; }
+    });
+  } catch (e) { box.innerHTML = `<div class="mu">بارگذاری تاریخچه ناموفق بود: ${esc(e.message)}</div>`; }
+}
+$("taskRefresh")?.addEventListener("click", loadTasks);
+
 async function loadSt() {
+  loadProviders();
+  loadTasks();
   try {
     const s = (await api(`/api/projects/${S.P}/snaps`)).snaps;
     $("snaps").innerHTML = s.length ? s.map(x => `<div class="li"><span>${esc(x.label)}<small>${new Date(x.t).toLocaleString("fa-IR")} · ${fa(x.n)} فایل</small></span><button class="btn" data-sn="${esc(x.id)}">${ic("undo")}بازگردانی</button></div>`).join("") : '<div class="mu">هنوز نسخه‌ای نیست؛ قبل از هر کار ایجنت یکی ساخته می‌شه.</div>';
